@@ -6,7 +6,7 @@ export default function RecipeCard({ recipe }) {
     <div className="border rounded shadow hover:shadow-lg transition overflow-hidden flex flex-col">
       {recipe.image && (
         <img
-  src={recipe.image ? `http://localhost:5000${recipe.image}` : ""}
+  src={recipe.image || "https://via.placeholder.com"} 
   alt={recipe.name}
   className="w-full h-48 object-cover rounded"
 />
@@ -29,3 +29,4 @@ export default function RecipeCard({ recipe }) {
     </div>
   );
 }
+

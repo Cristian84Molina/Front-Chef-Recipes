@@ -1,5 +1,6 @@
 // src/components/recipes/RecipeForm.jsx
 import { useState, useEffect } from "react";
+import API_URL from "../../services/api";
 
 export default function RecipeForm({ initialData, onSubmit }) {
   const [name, setName] = useState("");
@@ -68,7 +69,7 @@ export default function RecipeForm({ initialData, onSubmit }) {
         await onSubmit(formData);
       } else {
         // Creación de receta
-        const res = await fetch(`${process.env.REACT_APP_API_URL || "https://back-chef-recipes.vercel.app"}/api/recipes`, {
+        const res = await fetch(`${API_URL}/recipes`, {
           method: "POST",
           body: formData,
         });
@@ -179,3 +180,4 @@ export default function RecipeForm({ initialData, onSubmit }) {
     </form>
   );
 }
+

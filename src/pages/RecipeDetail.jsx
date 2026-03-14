@@ -9,7 +9,9 @@ export default function RecipeDetail() {
   const navigate = useNavigate();
 
   const handleDelete = async () => {
-    const confirmDelete = window.confirm("¿Seguro que quieres eliminar esta receta?");
+    const confirmDelete = window.confirm(
+      "¿Seguro que quieres eliminar esta receta?",
+    );
     if (!confirmDelete) return;
 
     try {
@@ -45,7 +47,10 @@ export default function RecipeDetail() {
 
   return (
     <div className="max-w-4xl mx-auto p-4 flex flex-col gap-6">
-      <Link to="/recipes" className="text-chefRed hover:text-chefBrown font-semibold">
+      <Link
+        to="/recipes"
+        className="text-chefRed hover:text-chefBrown font-semibold"
+      >
         ← Volver a todas las recetas
       </Link>
 
@@ -53,12 +58,14 @@ export default function RecipeDetail() {
       {recipe.image && (
         <div className="relative w-full h-64 md:h-96 rounded overflow-hidden shadow-lg">
           <img
-            src={recipe.image ? `http://localhost:5000${recipe.image}` : ""}
+            src={recipe.image || "https://via.placeholder.com"}
             alt={recipe.name}
-            className="w-full h-full object-cover"
+            className="w-full h-48 object-cover rounded"
           />
           <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-4">
-            <h2 className="text-2xl md:text-3xl font-bold text-white">{recipe.name}</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-white">
+              {recipe.name}
+            </h2>
             <p className="text-sm md:text-base text-gray-200">
               {recipe.category} • {recipe.type}
             </p>
@@ -81,7 +88,9 @@ export default function RecipeDetail() {
         {/* Preparación */}
         <div className="md:w-2/3 bg-chefCream p-4 rounded shadow">
           <h3 className="font-semibold text-lg mb-2">Preparación</h3>
-          <p className="text-gray-700 whitespace-pre-line">{recipe.description}</p>
+          <p className="text-gray-700 whitespace-pre-line">
+            {recipe.description}
+          </p>
         </div>
       </div>
 
@@ -102,4 +111,4 @@ export default function RecipeDetail() {
       </div>
     </div>
   );
-}   
+}
