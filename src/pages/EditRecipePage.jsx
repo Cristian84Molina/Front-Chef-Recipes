@@ -20,16 +20,21 @@ export default function EditRecipePage() {
   }, [id]);
 
   const handleUpdate = async (formData) => {
-
+  try {
     const res = await fetch(`${API_URL}/recipes/${id}`, {
       method: "PUT",
-      body: formData
+      body: formData // No agregues headers, el navegador lo hace solo con FormData
     });
 
     if (res.ok) {
       navigate(`/recipes/${id}`);
+    } else {
+      alert("Error al actualizar la receta");
     }
-  };
+  } catch (error) {
+    console.error("Error:", error);
+  }
+};
 
   if (!recipe) return <p>Cargando receta...</p>;
 
