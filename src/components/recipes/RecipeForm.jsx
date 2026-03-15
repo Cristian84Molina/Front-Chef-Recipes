@@ -1,8 +1,10 @@
 // src/components/recipes/RecipeForm.jsx
 import { useState, useEffect } from "react";
 import API_URL from "../../services/api";
+import { useNavigate } from "react-router-dom";
 
 export default function RecipeForm({ initialData, onSubmit }) {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [type, setType] = useState("");
@@ -88,6 +90,7 @@ export default function RecipeForm({ initialData, onSubmit }) {
         setPhoto(null);
 
         alert("Receta creada con éxito!");
+        navigate("/recipes");
       }
     } catch (err) {
       console.error(err);
