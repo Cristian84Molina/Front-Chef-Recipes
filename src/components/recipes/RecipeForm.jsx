@@ -5,18 +5,22 @@ import { useNavigate } from "react-router-dom";
 
 export default function RecipeForm({ initialData, onSubmit }) {
   const navigate = useNavigate();
+  
+  // Estados del formulario
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [type, setType] = useState("");
   const [ingredients, setIngredients] = useState([""]);
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState(null);
+  
+  // Estado para evitar múltiples clics y subidas dobles
+  const [loading, setLoading] = useState(false);
 
   const defaultCategories = [
     "Ensaladas", "Pastas", "Potajes", "Fritos", "Platos fríos",
     "Guisados", "Grillados", "Pescados", "Caldos", "Dulces"
   ];
-
   const defaultTypes = ["Aperitivo", "Primeros", "Segundos", "Postres"];
 
   // Cargar datos al editar
@@ -53,9 +57,11 @@ export default function RecipeForm({ initialData, onSubmit }) {
     e.preventDefault();
 
     if (!name || !category || !type || !description || ingredients.every(i => !i.trim())) {
-      alert("Completa todos los campos, incluyendo al menos un ingrediente");
+      alert("Completa todos los campos");
       return;
     }
+
+    setLoading(true); // Bloqueamos el botón aquí
 
     try {
       const formData = new FormData();
@@ -66,11 +72,13 @@ export default function RecipeForm({ initialData, onSubmit }) {
       formData.append("ingredients", JSON.stringify(ingredients.filter(i => i.trim() !== "")));
       if (photo) formData.append("photo", photo);
 
-      // Si existe onSubmit → edición
       if (onSubmit) {
+        // --- CASO EDICIÓN ---
         await onSubmit(formData);
+        alert("Receta actualizada con éxito!");
+        navigate("/recipes"); // Redirigimos después de editar
       } else {
-        // Creación de receta
+        // --- CASO CREACIÓN ---
         const res = await fetch(`${API_URL}/recipes`, {
           method: "POST",
           body: formData,
@@ -78,23 +86,14 @@ export default function RecipeForm({ initialData, onSubmit }) {
 
         if (!res.ok) throw new Error("Error al crear la receta");
 
-        const data = await res.json();
-        console.log("Receta creada:", data);
-
-        // Limpiar formulario
-        setName("");
-        setCategory("");
-        setType("");
-        setIngredients([""]);
-        setDescription("");
-        setPhoto(null);
-
-        alert("Receta creada con éxito!");
-        navigate("/recipes");
+        alert("¡Receta creada con éxito!");
+        navigate("/recipes"); // Redirigimos después de crear
       }
     } catch (err) {
       console.error(err);
       alert("Error al guardar la receta");
+    } finally {
+      setLoading(false); // Desbloqueamos el botón pase lo que pase
     }
   };
 
@@ -108,26 +107,14 @@ export default function RecipeForm({ initialData, onSubmit }) {
         className="border p-2 rounded"
       />
 
-      <select
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-        className="border p-2 rounded"
-      >
+      <select value={category} onChange={(e) => setCategory(e.target.value)} className="border p-2 rounded">
         <option value="">Selecciona categoría</option>
-        {defaultCategories.map(cat => (
-          <option key={cat} value={cat}>{cat}</option>
-        ))}
+        {defaultCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
       </select>
 
-      <select
-        value={type}
-        onChange={(e) => setType(e.target.value)}
-        className="border p-2 rounded"
-      >
+      <select value={type} onChange={(e) => setType(e.target.value)} className="border p-2 rounded">
         <option value="">Selecciona tipo</option>
-        {defaultTypes.map(t => (
-          <option key={t} value={t}>{t}</option>
-        ))}
+        {defaultTypes.map(t => <option key={t} value={t}>{t}</option>)}
       </select>
 
       <div className="flex flex-col gap-2">
@@ -142,45 +129,24 @@ export default function RecipeForm({ initialData, onSubmit }) {
               className="border p-2 rounded flex-1"
             />
             {ingredients.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeIngredient(idx)}
-                className="bg-red-500 text-white px-3 rounded hover:bg-red-600 transition"
-              >X</button>
+              <button type="button" onClick={() => removeIngredient(idx)} className="bg-red-500 text-white px-3 rounded">X</button>
             )}
           </div>
         ))}
-        <button
-          type="button"
-          onClick={addIngredient}
-          className="bg-chefRed text-white px-4 py-1 rounded hover:bg-chefBrown transition mt-1"
-        >
-          Agregar ingrediente
-        </button>
+        <button type="button" onClick={addIngredient} className="bg-chefRed text-white px-4 py-1 rounded">Agregar ingrediente</button>
       </div>
 
-      <textarea
-        placeholder="Descripción / paso a paso"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        className="border p-2 rounded"
-        rows={4}
-      />
+      <textarea placeholder="Preparación" value={description} onChange={(e) => setDescription(e.target.value)} className="border p-2 rounded" rows={4} />
 
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => setPhoto(e.target.files[0])}
-        className="border p-2 rounded"
-      />
+      <input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files[0])} className="border p-2 rounded" />
 
       <button
         type="submit"
-        className="bg-chefRed text-white px-6 py-2 rounded hover:bg-chefBrown transition"
+        disabled={loading} // Desactivado mientras carga
+        className={`${loading ? "bg-gray-400 cursor-not-allowed" : "bg-chefRed hover:bg-chefBrown"} text-white px-6 py-2 rounded transition`}
       >
-        {initialData ? "Actualizar receta" : "Guardar receta"}
+        {loading ? "Guardando..." : (initialData ? "Actualizar receta" : "Guardar receta")}
       </button>
     </form>
   );
 }
-
