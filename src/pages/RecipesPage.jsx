@@ -1,4 +1,3 @@
-// src/pages/RecipesPage.jsx
 import { useState, useEffect } from "react";
 import RecipeCard from "../components/recipes/RecipeCard";
 import API_URL from "../services/api";
@@ -8,44 +7,35 @@ export default function RecipesPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [visibleCount, setVisibleCount] = useState(9); // recetas visibles iniciales
+  const [visibleCount, setVisibleCount] = useState(9);
 
-  // Traer todas las recetas públicas + mis recetas privadas
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
         const token = localStorage.getItem("token");
-
         const headers = token ? { Authorization: token } : {};
-
         const res = await fetch(`${API_URL}/recipes`, { headers });
         const data = await res.json();
-
         setAllRecipes(data);
       } catch (err) {
         console.error(err);
       }
     };
-
     fetchRecipes();
   }, []);
 
-  // Filtrar recetas por búsqueda, categoría y tipo
   const filteredRecipes = allRecipes.filter(r =>
     r.name.toLowerCase().includes(search.toLowerCase()) &&
     (categoryFilter ? r.category === categoryFilter : true) &&
     (typeFilter ? r.type === typeFilter : true)
   );
 
-  // Recetas visibles según "Ver más"
   const visibleRecipes = filteredRecipes.slice(0, visibleCount);
 
-  // Resetear visibleCount cuando cambien filtros o búsqueda
   useEffect(() => {
     setVisibleCount(9);
   }, [search, categoryFilter, typeFilter]);
 
-  // Categorías y tipos dinámicos
   const categories = [...new Set(allRecipes.map(r => r.category))];
   const types = [...new Set(allRecipes.map(r => r.type))];
 
@@ -55,7 +45,6 @@ export default function RecipesPage() {
         Todas mis recetas
       </h2>
 
-      {/* Buscador y filtros */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <input
           type="text"
@@ -88,25 +77,14 @@ export default function RecipesPage() {
         </select>
       </div>
 
-      {/* Grid de recetas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {visibleRecipes.length > 0 ? (
-          visibleRecipes.map((r) => (
-            <div key={r.id} className="relative">
-              <RecipeCard recipe={r} />
-              {!r.is_public && (
-                <span className="absolute top-2 right-2 bg-yellow-400 text-black px-2 py-1 text-xs font-bold rounded">
-                  Privada
-                </span>
-              )}
-            </div>
-          ))
+          visibleRecipes.map((r) => <RecipeCard key={r.id} recipe={r} />)
         ) : (
           <p className="text-gray-500 col-span-full">No se encontraron recetas</p>
         )}
       </div>
 
-      {/* Botón Ver más */}
       {visibleCount < filteredRecipes.length && (
         <div className="flex justify-center mt-6">
           <button

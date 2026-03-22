@@ -1,9 +1,15 @@
 // src/components/layout/Layout.jsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Layout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // elimina token
+    navigate("/login"); // redirige a login
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-chefCream">
@@ -11,6 +17,7 @@ export default function Layout({ children }) {
         <div className="max-w-6xl mx-auto flex justify-between items-center p-4">
           <h1 className="text-xl font-bold">🍳 Chef Recipes</h1>
 
+          {/* Botón menú mobile */}
           <button
             className="md:hidden text-2xl"
             onClick={() => setMenuOpen(!menuOpen)}
@@ -18,17 +25,45 @@ export default function Layout({ children }) {
             ☰
           </button>
 
-          <nav className="hidden md:flex gap-6">
-            {/* Botón Inicio eliminado */}
+          {/* Menu desktop */}
+          <nav className="hidden md:flex gap-6 items-center">
             <Link to="/recipes" className="hover:underline">Recetas</Link>
             <Link to="/create" className="hover:underline">Crear</Link>
+            <button
+              onClick={handleLogout}
+              className="bg-white text-chefRed px-3 py-1 rounded hover:bg-gray-100"
+            >
+              Logout
+            </button>
           </nav>
         </div>
 
+        {/* Menu mobile */}
         {menuOpen && (
           <div className="md:hidden bg-chefBrown p-4 flex flex-col gap-3">
-            <Link to="/recipes" className="text-white" onClick={() => setMenuOpen(false)}>Recetas</Link>
-            <Link to="/create" className="text-white" onClick={() => setMenuOpen(false)}>Crear</Link>
+            <Link
+              to="/recipes"
+              className="text-white"
+              onClick={() => setMenuOpen(false)}
+            >
+              Recetas
+            </Link>
+            <Link
+              to="/create"
+              className="text-white"
+              onClick={() => setMenuOpen(false)}
+            >
+              Crear
+            </Link>
+            <button
+              onClick={() => {
+                handleLogout();
+                setMenuOpen(false);
+              }}
+              className="bg-white text-chefRed px-3 py-1 rounded hover:bg-gray-100"
+            >
+              Logout
+            </button>
           </div>
         )}
       </header>
