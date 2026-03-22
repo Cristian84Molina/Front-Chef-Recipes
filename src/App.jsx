@@ -1,30 +1,34 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { UserProvider } from "./components/layout/UserContext";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import RecipesPage from "./pages/RecipesPage";
 import RecipeDetail from "./pages/RecipeDetail";
 import CreateRecipePage from "./pages/CreateRecipePage";
 import EditRecipePage from "./pages/EditRecipePage";
 import LoginPage from "./pages/LoginPage";
-import MyRecipesPage from "./pages/MyRecipesPage";
+import RegisterPage from "./pages/RegisterPage";
+
+// Helper para rutas protegidas
+const PrivateRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  return token ? children : <Navigate to="/" />;
+};
 
 function App() {
   return (
-    <UserProvider>
-      <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<RecipesPage />} />
-            <Route path="/recipes" element={<RecipesPage />} />
-            <Route path="/recipes/:id" element={<RecipeDetail />} />
-            <Route path="/create" element={<CreateRecipePage />} />
-            <Route path="/recipes/edit/:id" element={<EditRecipePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/my" element={<MyRecipesPage />} />
-          </Routes>
-        </Layout>
-      </Router>
-    </UserProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+
+        <Route path="/recipes" element={<PrivateRoute><Layout><RecipesPage /></Layout></PrivateRoute>} />
+        <Route path="/recipes/:id" element={<PrivateRoute><Layout><RecipeDetail /></Layout></PrivateRoute>} />
+        <Route path="/create" element={<PrivateRoute><Layout><CreateRecipePage /></Layout></PrivateRoute>} />
+        <Route path="/recipes/edit/:id" element={<PrivateRoute><Layout><EditRecipePage /></Layout></PrivateRoute>} />
+
+        {/* Redirigir cualquier otra ruta al login */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
 

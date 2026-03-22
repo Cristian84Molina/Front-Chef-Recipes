@@ -1,51 +1,75 @@
-import { useState, useContext } from "react";
-import { Link } from "react-router-dom";
-import { UserContext } from "./UserContext";
+// src/components/layout/Layout.jsx
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Layout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user, logoutUser } = useContext(UserContext);
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token"); // revisamos si hay login
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/"); // redirige al login
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-chefCream">
+
+      {/* HEADER */}
       <header className="bg-chefRed text-white shadow-md">
         <div className="max-w-6xl mx-auto flex justify-between items-center p-4">
           <h1 className="text-xl font-bold">🍳 Chef Recipes</h1>
 
-          <button className="md:hidden text-2xl" onClick={() => setMenuOpen(!menuOpen)}>☰</button>
+          {/* Botón menu mobile */}
+          <button
+            className="md:hidden text-2xl"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            ☰
+          </button>
 
-          <nav className="hidden md:flex gap-6 items-center">
+          {/* Menu desktop */}
+          <nav className="hidden md:flex gap-6">
             <Link to="/" className="hover:underline">Inicio</Link>
             <Link to="/recipes" className="hover:underline">Recetas</Link>
-            {user ? (
+            {token ? (
               <>
-                <Link to="/my" className="hover:underline">Mis Recetas</Link>
-                <button onClick={logoutUser} className="hover:underline">Cerrar sesión</button>
+                <Link to="/create" className="hover:underline">Crear</Link>
+                <button onClick={handleLogout} className="hover:underline">Logout</button>
               </>
             ) : (
-              <Link to="/login" className="hover:underline">Login</Link>
+              <>
+                <Link to="/" className="hover:underline">Login</Link>
+                <Link to="/register" className="hover:underline">Registrarse</Link>
+              </>
             )}
           </nav>
         </div>
 
+        {/* Menu mobile */}
         {menuOpen && (
           <div className="md:hidden bg-chefBrown p-4 flex flex-col gap-3">
             <Link to="/" className="text-white" onClick={() => setMenuOpen(false)}>Inicio</Link>
             <Link to="/recipes" className="text-white" onClick={() => setMenuOpen(false)}>Recetas</Link>
-            {user ? (
+            {token ? (
               <>
-                <Link to="/my" className="text-white" onClick={() => setMenuOpen(false)}>Mis Recetas</Link>
-                <button onClick={() => { logoutUser(); setMenuOpen(false); }} className="text-white">Cerrar sesión</button>
+                <Link to="/create" className="text-white" onClick={() => setMenuOpen(false)}>Crear</Link>
+                <button onClick={() => { handleLogout(); setMenuOpen(false); }} className="text-white">Logout</button>
               </>
             ) : (
-              <Link to="/login" className="text-white" onClick={() => setMenuOpen(false)}>Login</Link>
+              <>
+                <Link to="/" className="text-white" onClick={() => setMenuOpen(false)}>Login</Link>
+                <Link to="/register" className="text-white" onClick={() => setMenuOpen(false)}>Registrarse</Link>
+              </>
             )}
           </div>
         )}
       </header>
 
+      {/* CONTENIDO */}
       <main className="flex-1 max-w-6xl mx-auto p-4 w-full">{children}</main>
 
+      {/* FOOTER */}
       <footer className="bg-chefBrown text-white text-center p-3">
         <p className="text-sm">🍽 Recetario personal de cocina</p>
       </footer>

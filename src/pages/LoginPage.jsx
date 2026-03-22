@@ -1,35 +1,54 @@
-import { useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import { login } from "../services/auth";
-import { UserContext } from "../components/layout/UserContext";
+// src/pages/LoginPage.jsx
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import API_URL from "../services/api";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { loginUser } = useContext(UserContext);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
-      const data = await login(email, password);
-      loginUser(data.user, data.token);
-      navigate("/recipes"); // Redirige al listado de recetas
+      const res = await fetch(`${API_URL}/users/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Error en login");
+        setLoading(false);
+        return;
+      }
+
+      const { token } = await res.json();
+      localStorage.setItem("token", token);
+      navigate("/recipes");
     } catch (err) {
-      alert(err.message);
+      console.error(err);
+      alert("Error en login");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4 text-chefBrown">Login</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <div className="max-w-md mx-auto mt-20 p-6 border rounded shadow bg-chefCream">
+      <h2 className="text-2xl font-bold mb-4 text-chefBrown">Iniciar Sesión</h2>
+      <form onSubmit={handleLogin} className="flex flex-col gap-4">
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="border p-2 rounded"
+          required
         />
         <input
           type="password"
@@ -37,14 +56,20 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="border p-2 rounded"
+          required
         />
         <button
           type="submit"
-          className="bg-chefRed text-white px-6 py-2 rounded hover:bg-chefBrown transition"
+          disabled={loading}
+          className={`text-white px-4 py-2 rounded ${loading ? "bg-gray-400" : "bg-chefRed hover:bg-chefBrown"}`}
         >
-          Ingresar
+          {loading ? "Ingresando..." : "Ingresar"}
         </button>
       </form>
+      <p className="mt-4 text-sm">
+        ¿No tenés cuenta?{" "}
+        <Link to="/register" className="text-chefRed hover:underline">Registrate</Link>
+      </p>
     </div>
   );
 }
