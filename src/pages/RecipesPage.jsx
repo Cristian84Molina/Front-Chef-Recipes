@@ -1,3 +1,4 @@
+// src/pages/RecipesPage.jsx
 import { useState, useEffect } from "react";
 import RecipeCard from "../components/recipes/RecipeCard";
 import API_URL from "../services/api";
@@ -7,13 +8,16 @@ export default function RecipesPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [visibleCount, setVisibleCount] = useState(9); // recetas visibles iniciales
+  const [visibleCount, setVisibleCount] = useState(9);
 
-  // Traer todas las recetas del backend
+  const token = localStorage.getItem("token"); // <-- token para recetas privadas
+
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
-        const res = await fetch(`${API_URL}/recipes`);
+        const res = await fetch(`${API_URL}/recipes`, {
+          headers: token ? { Authorization: token } : {}
+        });
         const data = await res.json();
         setAllRecipes(data);
       } catch (err) {
@@ -21,34 +25,27 @@ export default function RecipesPage() {
       }
     };
     fetchRecipes();
-  }, []);
+  }, [token]);
 
-  // Filtrar recetas por búsqueda, categoría y tipo
   const filteredRecipes = allRecipes.filter(r =>
     r.name.toLowerCase().includes(search.toLowerCase()) &&
     (categoryFilter ? r.category === categoryFilter : true) &&
     (typeFilter ? r.type === typeFilter : true)
   );
 
-  // Recetas visibles según "Ver más"
   const visibleRecipes = filteredRecipes.slice(0, visibleCount);
 
-  // Resetear visibleCount cuando cambien filtros o búsqueda
   useEffect(() => {
     setVisibleCount(9);
   }, [search, categoryFilter, typeFilter]);
 
-  // Categorías y tipos dinámicos
   const categories = [...new Set(allRecipes.map(r => r.category))];
   const types = [...new Set(allRecipes.map(r => r.type))];
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4 text-chefBrown">
-        Todas mis recetas
-      </h2>
+      <h2 className="text-2xl font-bold mb-4 text-chefBrown">Todas mis recetas</h2>
 
-      {/* Buscador y filtros */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <input
           type="text"
@@ -81,7 +78,6 @@ export default function RecipesPage() {
         </select>
       </div>
 
-      {/* Grid de recetas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {visibleRecipes.length > 0 ? (
           visibleRecipes.map((r) => <RecipeCard key={r.id} recipe={r} />)
@@ -90,7 +86,6 @@ export default function RecipesPage() {
         )}
       </div>
 
-      {/* Botón Ver más */}
       {visibleCount < filteredRecipes.length && (
         <div className="flex justify-center mt-6">
           <button
@@ -104,4 +99,3 @@ export default function RecipesPage() {
     </div>
   );
 }
-
