@@ -12,7 +12,6 @@ export default function RecipeDetail() {
   const navigate = useNavigate();
   const pdfRef = useRef();
 
-  // 🔐 Obtener usuario desde token
   const token = localStorage.getItem("token");
   let userId = null;
 
@@ -20,98 +19,90 @@ export default function RecipeDetail() {
     try {
       const decoded = jwtDecode(token);
       userId = decoded.id;
-    } catch (e) {
+    } catch {
       console.error("Token inválido");
     }
   }
 
-  // 📄 Descargar PDF
+  // 📄 PDF PRO
   const handleDownloadPDF = async () => {
     const element = pdfRef.current;
 
-    const canvas = await html2canvas(element, {
-      scale: 2,
-    });
-
-    const imgData = canvas.toDataURL("image/png");
-
-    const pdf = new jsPDF("p", "mm", "a4");
-
-    const imgWidth = 210;
-    const pageHeight = 295;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-    }
-
-    pdf.save(`receta-${recipe.name}.pdf`);
-  };
-
-  // 🗑️ Eliminar receta
-  const handleDelete = async () => {
-    const confirmDelete = window.confirm(
-      "¿Seguro que quieres eliminar esta receta?"
-    );
-    if (!confirmDelete) return;
+    // ocultar elementos no deseados
+    const noPdf = document.querySelectorAll(".no-pdf");
+    noPdf.forEach(el => (el.style.display = "none"));
 
     try {
-      const res = await fetch(`${API_URL}/recipes/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: token,
-        },
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff", // fondo blanco fijo
       });
 
-      if (res.ok) {
-        alert("Receta eliminada");
-        navigate("/recipes");
-      } else {
-        alert("No tienes permiso para eliminar esta receta");
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const imgWidth = 190; // margen
+      const pageHeight = 295;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 10; // margen superior
+
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
       }
+
+      pdf.save(`receta-${recipe.name}.pdf`);
     } catch (error) {
-      console.error(error);
-      alert("Error eliminando receta");
+      console.error("Error generando PDF:", error);
+    }
+
+    // volver a mostrar
+    noPdf.forEach(el => (el.style.display = "block"));
+  };
+
+  // 🗑️ eliminar
+  const handleDelete = async () => {
+    if (!window.confirm("¿Eliminar receta?")) return;
+
+    const res = await fetch(`${API_URL}/recipes/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: token },
+    });
+
+    if (res.ok) {
+      alert("Receta eliminada");
+      navigate("/recipes");
+    } else {
+      alert("No autorizado");
     }
   };
 
-  // 📥 Obtener receta
+  // 📥 fetch receta
   useEffect(() => {
     const fetchRecipe = async () => {
-      try {
-        const headers = token ? { Authorization: token } : {};
-        const res = await fetch(`${API_URL}/recipes/${id}`, { headers });
+      const headers = token ? { Authorization: token } : {};
+      const res = await fetch(`${API_URL}/recipes/${id}`, { headers });
 
-        if (res.status === 403) {
-          alert("No tienes permiso para ver esta receta");
-          navigate("/recipes");
-          return;
-        }
-
-        if (res.status === 404) {
-          alert("Receta no encontrada");
-          navigate("/recipes");
-          return;
-        }
-
-        const data = await res.json();
-        setRecipe(data);
-      } catch (err) {
-        console.error(err);
+      if (res.status === 403 || res.status === 404) {
+        navigate("/recipes");
+        return;
       }
+
+      const data = await res.json();
+      setRecipe(data);
     };
 
     fetchRecipe();
-  }, [id, navigate]);
+  }, [id]);
 
   if (!recipe) return <p>Cargando receta...</p>;
 
@@ -120,75 +111,86 @@ export default function RecipeDetail() {
   return (
     <div className="max-w-4xl mx-auto p-4 flex flex-col gap-6">
 
-      {/* 🔽 BOTÓN PDF */}
+      {/* BOTÓN PDF */}
       <button
         onClick={handleDownloadPDF}
-        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-fit"
+        className="no-pdf bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-fit"
       >
         Descargar PDF
       </button>
 
-      {/* 🔽 CONTENIDO EXPORTABLE */}
-      <div ref={pdfRef}>
+      {/* CONTENIDO PDF */}
+      <div ref={pdfRef} className="bg-white p-6 rounded shadow">
+
+        {/* HEADER PRO */}
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold text-chefBrown">
+            🍳 Chef Recipes
+          </h1>
+          <p className="text-gray-500 text-sm">
+            Receta generada desde la app
+          </p>
+        </div>
+
+        {/* VOLVER */}
         <Link
           to="/recipes"
-          className="text-chefRed hover:text-chefBrown font-semibold"
+          className="no-pdf text-chefRed hover:text-chefBrown font-semibold"
         >
-          ← Volver a todas las recetas
+          ← Volver
         </Link>
 
-        {/* Imagen */}
+        {/* IMAGEN */}
         {recipe.image && (
-          <div className="relative w-full h-64 md:h-96 rounded overflow-hidden shadow-lg mt-4">
+          <div className="mt-4">
             <img
-              src={recipe.image || "https://via.placeholder.com"}
+              src={recipe.image}
               alt={recipe.name}
-              className="w-full h-48 object-cover rounded"
+              crossOrigin="anonymous"
+              className="w-full h-64 object-cover rounded"
             />
-            <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-4">
-              <h2 className="text-2xl md:text-3xl font-bold text-white">
-                {recipe.name}
-              </h2>
-              <p className="text-sm md:text-base text-gray-200">
-                {recipe.category} • {recipe.type}{" "}
-                {!recipe.is_public && "(Privada)"}
-              </p>
-            </div>
           </div>
         )}
 
-        {/* Contenido */}
+        {/* TITULO */}
+        <div className="mt-4 text-center">
+          <h2 className="text-2xl font-bold">{recipe.name}</h2>
+          <p className="text-gray-600">
+            {recipe.category} • {recipe.type}{" "}
+            {!recipe.is_public && "(Privada)"}
+          </p>
+        </div>
+
+        {/* CONTENIDO */}
         <div className="flex flex-col md:flex-row gap-6 mt-6">
-          <div className="md:w-1/3 bg-chefCream p-4 rounded shadow">
-            <h3 className="font-semibold text-lg mb-2">Ingredientes</h3>
-            <ul className="list-disc list-inside text-gray-700">
+          <div className="md:w-1/3 bg-gray-100 p-4 rounded">
+            <h3 className="font-semibold mb-2">Ingredientes</h3>
+            <ul className="list-disc list-inside">
               {ingredients.map((ing, i) => (
                 <li key={i}>{ing}</li>
               ))}
             </ul>
           </div>
 
-          <div className="md:w-2/3 bg-chefCream p-4 rounded shadow">
-            <h3 className="font-semibold text-lg mb-2">Preparación</h3>
-            <p className="text-gray-700 whitespace-pre-line">
-              {recipe.description}
-            </p>
+          <div className="md:w-2/3 bg-gray-100 p-4 rounded">
+            <h3 className="font-semibold mb-2">Preparación</h3>
+            <p className="whitespace-pre-line">{recipe.description}</p>
           </div>
         </div>
 
-        {/* 🔐 Botones solo dueño */}
+        {/* BOTONES SOLO DUEÑO */}
         {userId === recipe.user_id && (
-          <div className="flex gap-4 mt-4">
+          <div className="flex gap-4 mt-6 no-pdf">
             <Link
               to={`/recipes/edit/${recipe.id}`}
-              className="bg-chefRed text-white px-6 py-2 rounded hover:bg-chefBrown transition"
+              className="bg-chefRed text-white px-6 py-2 rounded hover:bg-chefBrown"
             >
-              Editar receta
+              Editar
             </Link>
 
             <button
               onClick={handleDelete}
-              className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition"
+              className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
             >
               Eliminar
             </button>
