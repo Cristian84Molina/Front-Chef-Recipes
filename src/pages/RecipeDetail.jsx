@@ -24,85 +24,83 @@ export default function RecipeDetail() {
     }
   }
 
-  // 📄 PDF PRO
+  // 📄 GENERAR PDF (ESTABLE)
   const handleDownloadPDF = async () => {
     const element = pdfRef.current;
 
-    // ocultar elementos no deseados
     const noPdf = document.querySelectorAll(".no-pdf");
-    noPdf.forEach(el => (el.style.display = "none"));
+
+    // ocultar elementos
+    noPdf.forEach(el => el.style.display = "none");
 
     try {
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
-        backgroundColor: "#ffffff", // fondo blanco fijo
       });
 
       const imgData = canvas.toDataURL("image/png");
 
       const pdf = new jsPDF("p", "mm", "a4");
 
-      const imgWidth = 190; // margen
-      const pageHeight = 295;
+      const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      let heightLeft = imgHeight;
-      let position = 10; // margen superior
-
-      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight + 10;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
 
       pdf.save(`receta-${recipe.name}.pdf`);
-    } catch (error) {
-      console.error("Error generando PDF:", error);
+    } catch (err) {
+      console.error("Error generando PDF:", err);
     }
 
-    // volver a mostrar
-    noPdf.forEach(el => (el.style.display = "block"));
+    // restaurar elementos
+    noPdf.forEach(el => (el.style.display = "flex"));
   };
 
   // 🗑️ eliminar
   const handleDelete = async () => {
-    if (!window.confirm("¿Eliminar receta?")) return;
+    if (!window.confirm("¿Seguro que quieres eliminar esta receta?")) return;
 
-    const res = await fetch(`${API_URL}/recipes/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: token },
-    });
+    try {
+      const res = await fetch(`${API_URL}/recipes/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: token,
+        },
+      });
 
-    if (res.ok) {
-      alert("Receta eliminada");
-      navigate("/recipes");
-    } else {
-      alert("No autorizado");
+      if (res.ok) {
+        alert("Receta eliminada");
+        navigate("/recipes");
+      } else {
+        alert("No autorizado");
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
 
   // 📥 fetch receta
   useEffect(() => {
     const fetchRecipe = async () => {
-      const headers = token ? { Authorization: token } : {};
-      const res = await fetch(`${API_URL}/recipes/${id}`, { headers });
+      try {
+        const headers = token ? { Authorization: token } : {};
+        const res = await fetch(`${API_URL}/recipes/${id}`, { headers });
 
-      if (res.status === 403 || res.status === 404) {
-        navigate("/recipes");
-        return;
+        if (res.status === 403 || res.status === 404) {
+          navigate("/recipes");
+          return;
+        }
+
+        const data = await res.json();
+        setRecipe(data);
+      } catch (err) {
+        console.error(err);
       }
-
-      const data = await res.json();
-      setRecipe(data);
     };
 
     fetchRecipe();
-  }, [id]);
+  }, [id, navigate]);
 
   if (!recipe) return <p>Cargando receta...</p>;
 
@@ -119,25 +117,15 @@ export default function RecipeDetail() {
         Descargar PDF
       </button>
 
-      {/* CONTENIDO PDF */}
-      <div ref={pdfRef} className="bg-white p-6 rounded shadow">
-
-        {/* HEADER PRO */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-chefBrown">
-            🍳 Chef Recipes
-          </h1>
-          <p className="text-gray-500 text-sm">
-            Receta generada desde la app
-          </p>
-        </div>
-
+      {/* CONTENIDO EXPORTABLE */}
+      <div ref={pdfRef}>
+        
         {/* VOLVER */}
         <Link
           to="/recipes"
           className="no-pdf text-chefRed hover:text-chefBrown font-semibold"
         >
-          ← Volver
+          ← Volver a todas las recetas
         </Link>
 
         {/* IMAGEN */}
@@ -153,8 +141,10 @@ export default function RecipeDetail() {
         )}
 
         {/* TITULO */}
-        <div className="mt-4 text-center">
-          <h2 className="text-2xl font-bold">{recipe.name}</h2>
+        <div className="mt-4">
+          <h2 className="text-2xl font-bold text-chefBrown">
+            {recipe.name}
+          </h2>
           <p className="text-gray-600">
             {recipe.category} • {recipe.type}{" "}
             {!recipe.is_public && "(Privada)"}
@@ -163,7 +153,8 @@ export default function RecipeDetail() {
 
         {/* CONTENIDO */}
         <div className="flex flex-col md:flex-row gap-6 mt-6">
-          <div className="md:w-1/3 bg-gray-100 p-4 rounded">
+          
+          <div className="md:w-1/3 bg-chefCream p-4 rounded shadow">
             <h3 className="font-semibold mb-2">Ingredientes</h3>
             <ul className="list-disc list-inside">
               {ingredients.map((ing, i) => (
@@ -172,15 +163,18 @@ export default function RecipeDetail() {
             </ul>
           </div>
 
-          <div className="md:w-2/3 bg-gray-100 p-4 rounded">
+          <div className="md:w-2/3 bg-chefCream p-4 rounded shadow">
             <h3 className="font-semibold mb-2">Preparación</h3>
-            <p className="whitespace-pre-line">{recipe.description}</p>
+            <p className="whitespace-pre-line">
+              {recipe.description}
+            </p>
           </div>
+
         </div>
 
         {/* BOTONES SOLO DUEÑO */}
         {userId === recipe.user_id && (
-          <div className="flex gap-4 mt-6 no-pdf">
+          <div className="no-pdf flex gap-4 mt-6">
             <Link
               to={`/recipes/edit/${recipe.id}`}
               className="bg-chefRed text-white px-6 py-2 rounded hover:bg-chefBrown"
@@ -196,6 +190,7 @@ export default function RecipeDetail() {
             </button>
           </div>
         )}
+
       </div>
     </div>
   );
